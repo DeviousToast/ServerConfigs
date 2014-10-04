@@ -1,0 +1,95 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          hl2mp_server
+# Required-Start:    $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Half-Life 2 MP server
+# Description:       Starts a Half-Life 2 MP server
+### END INIT INFO
+
+NAME="HL 2 Deathmatch"
+USER="dlacher"
+SCREENREF="hl2mpserver"
+SERVER_BASE_PATH="/srv/hlserver"
+BINARYPATH="${SERVER_BASE_PATH}/hl2mp"
+BINARYNAME="srcds_run"
+STEAMCMDPATH="${SERVER_BASE_PATH}/steamcmd"
+PIDFILE="hl2mpserver.pid"
+# This must source from the same file as "mapcyclefile" in the config.
+MAPCYCLE_CONFIG="mapcycle.txt"
+START_MAP="$(head -n 1 ${BINARYPATH}/hl2mp/cfg/${MAPCYCLE_CONFIG})"
+SERVER_CONFIG="server.cfg"
+PORT="27017"
+MAX_PLAYERS="26"
+REPLAY_DIR="hl2mp"
+
+OPTS="-game hl2mp -autoupdate -replay -replayserverdir ${REPLAY_DIR} -steam_dir ${STEAMCMDPATH} -steamcmd_script ${STEAMCMDPATH}/hl2mp_ds.txt +sv_shutdown_timeout_minutes 5 +sv_pure 0 +port ${PORT} +servercfgfile ${SERVER_CONFIG} +maxplayers ${MAX_PLAYERS} +map ${START_MAP} +mapcyclefile ${MAPCYCLE_CONFIG}"
+PGREP_PATTERN="${BINARYNAME}.*${SERVER_CONFIG}"
+
+
+cd "$BINARYPATH"
+
+running() {
+    if [ -n "$(pgrep -f ${PGREP_PATTERN})" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+start() {
+    if ! running; then
+        echo -n "Starting the $NAME server... "
+        start-stop-daemon --start --name $BINARYNAME --chuid $USER --user $USER --chdir $BINARYPATH --exec "/usr/bin/screen" -- -dmS $SCREENREF $BINARYPATH/$BINARYNAME $OPTS
+        pgrep -f $PGREP_PATTERN > $PIDFILE
+        if [ -s $PIDFILE ]; then
+            echo "Done"
+        else
+            echo "Failed"
+            rm $PIDFILE
+        fi
+    else
+        echo "The $NAME server is already started."
+    fi
+}
+
+stop() {
+    if running; then
+        echo -n "Stopping the $NAME server... "
+        kill `cat $PIDFILE`
+        while running; do
+            sleep 1
+        done
+        rm $PIDFILE
+        echo "Done"
+    else
+        echo "The $NAME server is already stopped."
+    fi
+}
+
+case "$1" in
+    start)
+        start
+    ;;
+    stop)
+        stop
+    ;;
+    restart)
+	stop
+        start
+    ;;
+    status)
+        if running; then
+            echo "The $NAME server is started."
+        else
+            echo "The $NAME server is stopped."
+        fi
+    ;;
+    *)
+        echo "Usage: $0 (start|stop|restart|status)"
+        exit 1
+esac
+exit 0
