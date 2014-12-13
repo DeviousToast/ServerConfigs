@@ -17,17 +17,16 @@ SERVER_BASE_PATH="/srv/hlserver"
 BINARYPATH="${SERVER_BASE_PATH}/tf2"
 BINARYNAME="srcds_run"
 STEAMCMDPATH="${SERVER_BASE_PATH}/steamcmd"
+STEAMCMDSCRIPT="${STEAMCMDPATH}/tf2_ds.txt"
 PIDFILE="tf2server.pid"
 # This must source from the same file as "mapcyclefile" in the config.
-MAPCYCLE_CONFIG="mapcycle_payload.txt"
-START_MAP="$(head -n 1 ${BINARYPATH}/tf/cfg/${MAPCYCLE_CONFIG})"
-SERVER_CONFIG="server_payload.cfg"
+START_MAP="$(head -n 1 ${BINARYPATH}/tf/cfg/mapcycle.txt)"
 PORT="27016"
 MAX_PLAYERS="26"
 REPLAY_DIR="tf2"
 
-OPTS="-game tf -autoupdate -replay -replayserverdir ${REPLAY_DIR} -steam_dir ${STEAMCMDPATH} -steamcmd_script ${STEAMCMDPATH}/tf2_ds.txt +sv_shutdown_timeout_minutes 5 +sv_pure 0 +port ${PORT} +servercfgfile ${SERVER_CONFIG} +maxplayers ${MAX_PLAYERS} +map ${START_MAP} +mapcyclefile ${MAPCYCLE_CONFIG}"
-PGREP_PATTERN="${BINARYNAME}.*${SERVER_CONFIG}"
+OPTS="-game tf -autoupdate -replay -replayserverdir ${REPLAY_DIR} -steam_dir ${STEAMCMDPATH} -steamcmd_script ${STEAMCMDSCRIPT} +sv_shutdown_timeout_minutes 5 +sv_pure 0 +port ${PORT} +maxplayers ${MAX_PLAYERS} +map ${START_MAP}"
+PGREP_PATTERN="${BINARYNAME}.*${STEAMCMDSCRIPT}"
 
 
 cd "$BINARYPATH"
